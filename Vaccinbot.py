@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.6
 
 import requests
 import json
@@ -28,6 +28,7 @@ table_header = ["Vaccine", "Distance", "Day", "Time", "Name", "Location"]
 found_appointments = []
 
 for dep in departments:
+  print("Searching in " + dep + ", " + department_list[dep])
   now = datetime.now(timezone.utc)
   response = requests.get("https://vitemadose.gitlab.io/vitemadose/" + dep + ".json")
   responses[dep] = response
@@ -44,9 +45,9 @@ for dep in departments:
         vaccine_types = ",".join(centre["vaccine_type"])
         entry = [
           vaccine_types,
-          str(distance) + " km",
-          str(appointment_time.day) + "/" + str(appointment_time.month),
-          str(appointment_time.hour) + ":" + str(appointment_time.minute),
+          "{:d}".format(distance) + " km",
+          "{:d}".format(appointment_time.day) + "/" + "{:d}".format(appointment_time.month),
+          "{:02d}".format(appointment_time.hour) + ":" + "{:02d}".format(appointment_time.minute).format(2),
           centre["nom"],
           centre["location"]["city"] + ", " + department_list[dep]
         ]
