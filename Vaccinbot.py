@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 
 import requests
 import json
@@ -52,6 +52,6 @@ for dep in departments:
         ]
         found_appointments.append(entry)
 
-extract_distance = lambda tuple: float(tuple[1][:-3])
-sorted_appointments = sorted(found_appointments, key=extract_distance)
+distance_time = lambda tuple: (float(tuple[1][:-3], ))
+sorted_appointments = sorted(found_appointments, key=distance_time)
 print(tabulate.tabulate(sorted_appointments, headers=table_header))
