@@ -1,7 +1,9 @@
 FROM python
 
-RUN python -m pip install tabulate geopy requests python-dateutil slackclient
-
 ADD Vaccinbot.py ./
+ADD requirements.txt .
+
+RUN pip install -r requirements.txt
+
 
 ENTRYPOINT [ "./Vaccinbot.py" ]
