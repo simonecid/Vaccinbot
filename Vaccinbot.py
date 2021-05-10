@@ -26,13 +26,13 @@ VACCINES["M"] = "Moderna"
 VACCINES["AZ"] = "AstraZeneca"
 VACCINES["J"] = "Janssen"
 VACCINES["mRNA"] = "ARNm"
-SELECTED_VACCINES = ["Pfizer-BioNTech", "Moderna", "AstraZeneca", "ARNm", "Janssen"]
+SELECTED_VACCINES = ["P", "M", "AZ", "J", "mRNA"]
 
 parser = argparse.ArgumentParser(description="A bot that automatically fetches date from ViteMaDose and finds appointments within 24h.")
 parser.add_argument("--interval", type=int, help="Time in minutes between queries to ViteMaDose. Default: " + str(PING_INTERVAL_MINUTES), default=PING_INTERVAL_MINUTES)
 parser.add_argument("--slack-token", type=argparse.FileType(), help="Path to file containing a slack token (activates Slack bot feature).")
 parser.add_argument("--location", type=float, metavar=("LAT", "LONG"), nargs=2, help="Latitude and longitude of your location. Default: St. Genis.", default=ST_GENIS)
-parser.add_argument("--max-distance", type=int, help="Maximum radius of search from your position. Default: " + str(MAX_DISTANCE) , default=MAX_DISTANCE)
+parser.add_argument("--max-distance", type=int, help="Maximum radius of search from your position in km. Default: " + str(MAX_DISTANCE) + " km" , default=MAX_DISTANCE)
 parser.add_argument("--vaccines", type=str, nargs="*", help="List of vaccines to look for. P=Pfizer-BioNTech;  M=Moderna; AZ=AstraZeneca; J=Janssen. Default: all.", default=SELECTED_VACCINES)
 parser.add_argument("--depts", type=str, nargs="*", help="List of department numbers where to look for vaccines (add 0 before single-digit depts. e.g. 01 not 1). Default: 01 (Ain) + neighbouring depts.", default=DEPARTMENTS)
 
