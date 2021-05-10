@@ -1,4 +1,4 @@
-FROM python
+FROM python:3.9-slim
 
 ADD Vaccinbot.py ./
 ADD requirements.txt .
