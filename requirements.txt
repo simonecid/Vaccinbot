@@ -1,0 +1,7 @@
+requests
+python-dateutil
+datetime
+tabulate
+geopy
+slack
+argparse

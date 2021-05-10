@@ -40,6 +40,12 @@ No Slack bot:
 With Slack bot:
 ```python3.6 Vaccinbot.py --interval 20 --slack-token slack_token.txt --location 46 6 --max-distance 55 --vaccines AZ J ```
 
+## Dependencies
+The dependencies can be installed from the command line via `pip`:
+```
+pip install -r requirements.txt
+```
+
 ## Slack bot
 
 Create a Slack app, create the channel ```#vaccinbot```, copy and paste the app token in a file. Link the file via the ```---slack-token``` option.
