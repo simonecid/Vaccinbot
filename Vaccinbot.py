@@ -11,6 +11,8 @@ import slack
 import time
 import argparse
 
+# Constants and defaults
+
 SECONDS_IN_DAY = 60*60*24
 
 ST_GENIS = (46.2440083, 6.0253162)
@@ -27,6 +29,9 @@ VACCINES["AZ"] = "AstraZeneca"
 VACCINES["J"] = "Janssen"
 VACCINES["mRNA"] = "ARNm"
 SELECTED_VACCINES = ["P", "M", "AZ", "J", "mRNA"]
+
+
+# Argument parsing
 
 parser = argparse.ArgumentParser(description="A bot that automatically fetches date from ViteMaDose and finds appointments within 24h.")
 parser.add_argument("--interval", type=int, help="Time in minutes between queries to ViteMaDose. Default: " + str(PING_INTERVAL_MINUTES), default=PING_INTERVAL_MINUTES)
@@ -45,17 +50,21 @@ MAX_DISTANCE = args.max_distance
 SELECTED_VACCINES = [VACCINES[v] for v in args.vaccines]
 DEPARTMENTS = args.depts
 
+# Sends a message on Slack
 def postMessage(client, message, channel):
   response = client.chat_postMessage(
     channel=channel,
     text=message
   )
 
+# Fetching list of French departments with codes and relative names
+# Then, creating a dictionary to translate to dep code to dep name
 department_list_json = requests.get("https://vitemadose.gitlab.io/vitemadose/departements.json").json()
 department_list = {}
 for dep in department_list_json:
   department_list[dep["code_departement"]] = dep["nom_departement"]
 
+# Collects the data from each department
 responses = {}
 
 print("Looking for:", SELECTED_VACCINES)
@@ -68,6 +77,12 @@ while(True):
 
   found_appointments = []
 
+  # For each department, downloading the available appointments
+  # then parsing, and finding the earliest available appointment
+  # checking if it fits in the time, distance, and vaccine type constraints
+  # if it does, an entry is created in found_appointments
+
+  ## fetch and parse
   for dep in DEPARTMENTS:
     print("Searching in " + dep + ", " + department_list[dep])
     now = datetime.now(timezone.utc)
@@ -75,12 +90,17 @@ while(True):
     responses[dep] = response
     if response.status_code == 200:
       response_json = response.json()
+
+      ## checking first available appointment in each centre
       available_centres = response_json["centres_disponibles"]
       for centre in available_centres:
         next_available_appointment = centre["prochain_rdv"]
         appointment_time = dateutil.parser.parse(next_available_appointment)
 
+        ## checking if it is today or tomorrow
         if appointment_time.date() - datetime.today().date() <= timedelta(days=1):
+
+          ## checking distance and vaccine type constraint and storing if OK
           location = (centre["location"]["latitude"], centre["location"]["longitude"])
           distance = round(geopy.distance.distance(location, MY_LOCATION).km)
           vaccine_types = centre["vaccine_type"]
@@ -97,12 +117,17 @@ while(True):
             ]
             found_appointments.append(entry)
 
-  distance_time = lambda tuple: (float(tuple[1][:-3], ))
-  sorted_appointments = sorted(found_appointments, key=distance_time)
+  # Sorting by distance
+  # this function removes " km" from the distance entry in the table
+  distance = lambda tuple: (float(tuple[1][:-3]))
+  sorted_appointments = sorted(found_appointments, key=distance)
+
+  # Printing results
   print("\n")
   print(tabulate.tabulate(sorted_appointments, headers=table_header))
   print("\n")
 
+  # Sending to slack channel #vaccinbot if a slack token is found
   if SLACK_TOKEN_FILE is not None: 
     if len(sorted_appointments) > 0:
       client = slack.WebClient(token=SLACK_TOKEN_FILE.readline())
