@@ -1,6 +1,7 @@
 # Vaccinbot
 
 Simple bot that automatically downloads data from ViteMaDose to find appointments within 24h. 
+By default it finds appointments for all vaccine types within 50km from St. Genis-Pouilly.
 
 Use:
 
