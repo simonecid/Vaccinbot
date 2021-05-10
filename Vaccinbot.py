@@ -3,7 +3,7 @@
 import requests
 import json
 import dateutil.parser
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import tabulate
 import geopy.distance
 from operator import itemgetter
@@ -79,8 +79,8 @@ while(True):
       for centre in available_centres:
         next_available_appointment = centre["prochain_rdv"]
         appointment_time = dateutil.parser.parse(next_available_appointment)
-        time_interval_day = ((appointment_time - now).total_seconds())/SECONDS_IN_DAY
-        if time_interval_day < 1:
+
+        if appointment_time.date() - datetime.today().date() <= timedelta(days=1):
           location = (centre["location"]["latitude"], centre["location"]["longitude"])
           distance = round(geopy.distance.distance(location, MY_LOCATION).km)
           vaccine_types = centre["vaccine_type"]
