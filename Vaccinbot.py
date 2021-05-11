@@ -6,7 +6,6 @@ import dateutil.parser
 from datetime import datetime, timezone, timedelta
 import tabulate
 import geopy.distance
-import getpass
 from operator import itemgetter
 import slack
 import time
@@ -39,6 +38,7 @@ def get_args():
     parser.add_argument("--interval", type=int, help="Time in minutes between queries to ViteMaDose. Default: " + str(PING_INTERVAL_MINUTES), default=PING_INTERVAL_MINUTES)
     parser.add_argument("--slack-token", type=argparse.FileType(), help="Path to file containing a slack token (activates Slack bot feature).")
     parser.add_argument("--free-mobile-user", type=str, help="User to be used with the Free Mobile SMS API")
+    parser.add_argument("--free-mobile-password", type=argparse.FileType(), help="Path to file containing a Free mobile password.")
     parser.add_argument("--location", type=float, metavar=("LAT", "LONG"), nargs=2, help="Latitude and longitude of your location. Default: St. Genis.", default=ST_GENIS)
     parser.add_argument("--max-distance", type=int, help="Maximum radius of search from your position in km. Default: " + str(MAX_DISTANCE) + " km" , default=MAX_DISTANCE)
     parser.add_argument("--vaccines", type=str, nargs="*", help="List of vaccines to look for. P=Pfizer-BioNTech;  M=Moderna; AZ=AstraZeneca; J=Janssen. Default: all.", default=SELECTED_VACCINES)
@@ -48,7 +48,7 @@ def get_args():
 
     # If there's a free mobile user in the args, ask for the pass
     if args.free_mobile_user:
-        args.free_mobile_pass = getpass.getpass("Free mobile pass: ")
+        args.free_mobile_pass = args.free_mobile_password.readline()
 
     return args
 

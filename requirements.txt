@@ -5,4 +5,3 @@ tabulate
 geopy
 slack
 argparse
-getpass
