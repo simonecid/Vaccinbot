@@ -35,7 +35,7 @@ SELECTED_VACCINES = ["P", "M", "AZ", "J", "mRNA"]
 # Argument parsing
 def get_args():
     parser = argparse.ArgumentParser(description="A bot that automatically fetches date from ViteMaDose and finds appointments within 24h.")
-    parser.add_argument("--interval", type=int, help="Time in minutes between queries to ViteMaDose. Default: " + str(PING_INTERVAL_MINUTES), default=PING_INTERVAL_MINUTES)
+    parser.add_argument("--interval", type=float, help="Time in minutes between queries to ViteMaDose. Default: " + str(PING_INTERVAL_MINUTES), default=PING_INTERVAL_MINUTES)
     parser.add_argument("--slack-token", type=argparse.FileType(), help="Path to file containing a slack token (activates Slack bot feature).")
     parser.add_argument("--free-mobile-user", type=str, help="User to be used with the Free Mobile SMS API")
     parser.add_argument("--free-mobile-password", type=argparse.FileType(), help="Path to file containing a Free mobile password.")
@@ -47,7 +47,7 @@ def get_args():
     args = parser.parse_args()
 
     # If there's a free mobile user in the args, ask for the pass
-    if args.free_mobile_user: args.free_mobile_pass = args.free_mobile_password.readline()
+    if args.free_mobile_user: args.free_mobile_pass = args.free_mobile_password.readline().strip()
 
     if args.slack_token is not None: args.slack_token=args.slack_token.readline()
 
@@ -84,6 +84,8 @@ print("Radius:", MAX_DISTANCE, "km")
 print("Searching chronodoses...")
 
 table_header = ["Vaccine", "Distance", "Day", "Time", "Location", "# doses", "URL"]
+
+archive = []
 
 while(True):
 
@@ -130,7 +132,9 @@ while(True):
             str(number_of_available_chronodoses),
             centre["url"]
           ]
-          found_appointments.append(entry)
+          if entry not in archive:
+            found_appointments.append(entry)
+            archive.append(entry)
 
   # Sorting by distance
   # this function removes " km" from the distance entry in the table
@@ -142,34 +146,35 @@ while(True):
   print(tabulate.tabulate(sorted_appointments, headers=table_header))
   print("\n")
 
-  # Sending to slack channel #vaccinbot if a slack token is found
-  if args.slack_token is not None:
-    if len(sorted_appointments) > 0:
-      client = slack.WebClient(token=args.slack_token)
-      postMessage(client, 
-          "```" + tabulate.tabulate(sorted_appointments, headers=table_header) + "```",
-        "#vaccinbot"
-      )
-  
-  # Send an SMS if a combo of user/pass for the Free Mobile API are supplied
-  if args.free_mobile_user:
-    def format_sms(sorted_appointments, table_header):
-      text = ''
-      for appointment in sorted_appointments:
-        text += '---------\n'
-        for key, value in zip(table_header, appointment):
-          text += f'{key}: {value}\n'
-        text += '\n'
-      return text
+  if len(sorted_appointments) > 0:
+    # Sending to slack channel #vaccinbot if a slack token is found
+    if args.slack_token is not None:
+      if len(sorted_appointments) > 0:
+        client = slack.WebClient(token=args.slack_token)
+        postMessage(client, 
+            "```" + tabulate.tabulate(sorted_appointments, headers=table_header) + "```",
+          "#vaccinbot"
+        )
+    
+    # Send an SMS if a combo of user/pass for the Free Mobile API are supplied
+    if args.free_mobile_user:
+      def format_sms(sorted_appointments, table_header):
+        text = ''
+        for appointment in sorted_appointments:
+          text += '---------\n'
+          for key, value in zip(table_header, appointment):
+            text += f'{key}: {value}\n'
+          text += '\n'
+        return text
 
-    print("Sending SMS…")
-    base = "https://smsapi.free-mobile.fr/sendmsg"
-    msg = format_sms(sorted_appointments, table_header)
-    url = f"{base}?user={args.free_mobile_user}&pass={args.free_mobile_pass}&msg={msg}"
-    r = requests.post(url)
+      print("Sending SMS…")
+      base = "https://smsapi.free-mobile.fr/sendmsg"
+      msg = format_sms(sorted_appointments, table_header)
+      url = f"{base}?user={args.free_mobile_user}&pass={args.free_mobile_pass}&msg={msg}"
+      r = requests.post(url)
 
-    if r.status_code == 403:
-      print("Error while sending SMS: wrong credentials")
+      if r.status_code == 403:
+        print("Error while sending SMS: wrong credentials")
 
 
   print("Sleeping, back in", PING_INTERVAL_MINUTES, " minutes")
