@@ -35,7 +35,7 @@ Example:
 ```python3.6 Vaccinbot.py --interval 20 --slack-token slack_token.txt --location 46 6 --max-distance 55 --vaccines AZ J ```
 
 * Free Mobile API:
-```python3.6 Vaccinbot.py --free_mobile_user user```
+```python3.6 Vaccinbot.py --free-mobile-user user```
 
 ## Dependencies
 The dependencies can be installed from the command line via `pip`:

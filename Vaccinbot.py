@@ -48,7 +48,7 @@ def get_args():
 
     # If there's a free mobile user in the args, ask for the pass
     if args.free_mobile_user:
-        args.free_mobile_pass = getpass.getpass("Fee mobile pass: ")
+        args.free_mobile_pass = getpass.getpass("Free mobile pass: ")
 
     return args
 
