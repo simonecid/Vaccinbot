@@ -47,8 +47,9 @@ def get_args():
     args = parser.parse_args()
 
     # If there's a free mobile user in the args, ask for the pass
-    if args.free_mobile_user:
-        args.free_mobile_pass = args.free_mobile_password.readline()
+    if args.free_mobile_user: args.free_mobile_pass = args.free_mobile_password.readline()
+
+    if args.slack_token is not None: args.slack_token=args.slack_token.readline()
 
     return args
 
@@ -56,7 +57,6 @@ def get_args():
 args = get_args()
 
 PING_INTERVAL_MINUTES = args.interval
-SLACK_TOKEN_FILE = args.slack_token
 MY_LOCATION = args.location
 MAX_DISTANCE = args.max_distance
 SELECTED_VACCINES = [VACCINES[v] for v in args.vaccines]
@@ -140,9 +140,9 @@ while(True):
   print("\n")
 
   # Sending to slack channel #vaccinbot if a slack token is found
-  if SLACK_TOKEN_FILE is not None: 
+  if args.slack_token is not None:
     if len(sorted_appointments) > 0:
-      client = slack.WebClient(token=SLACK_TOKEN_FILE.readline())
+      client = slack.WebClient(token=args.slack_token)
       postMessage(client, 
           "```" + tabulate.tabulate(sorted_appointments, headers=table_header) + "```",
         "#vaccinbot"
