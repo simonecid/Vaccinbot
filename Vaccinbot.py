@@ -6,10 +6,12 @@ import dateutil.parser
 from datetime import datetime, timezone, timedelta
 import tabulate
 import geopy.distance
+import getpass
 from operator import itemgetter
 import slack
 import time
 import argparse
+from urllib.parse import quote
 
 # Constants and defaults
 
@@ -37,7 +39,6 @@ def get_args():
     parser.add_argument("--interval", type=int, help="Time in minutes between queries to ViteMaDose. Default: " + str(PING_INTERVAL_MINUTES), default=PING_INTERVAL_MINUTES)
     parser.add_argument("--slack-token", type=argparse.FileType(), help="Path to file containing a slack token (activates Slack bot feature).")
     parser.add_argument("--free-mobile-user", type=str, help="User to be used with the Free Mobile SMS API")
-    parser.add_argument("--free-mobile-pass", type=str, help="Password used for the Free Mobile SMS API")
     parser.add_argument("--location", type=float, metavar=("LAT", "LONG"), nargs=2, help="Latitude and longitude of your location. Default: St. Genis.", default=ST_GENIS)
     parser.add_argument("--max-distance", type=int, help="Maximum radius of search from your position in km. Default: " + str(MAX_DISTANCE) + " km" , default=MAX_DISTANCE)
     parser.add_argument("--vaccines", type=str, nargs="*", help="List of vaccines to look for. P=Pfizer-BioNTech;  M=Moderna; AZ=AstraZeneca; J=Janssen. Default: all.", default=SELECTED_VACCINES)
@@ -45,10 +46,9 @@ def get_args():
 
     args = parser.parse_args()
 
-    # For free mobile, both user and pass are required
-    if bool(args.free_mobile_user) != bool(args.free_mobile_pass):  # XOR
-        print('Both user and pass are required to use the free mobile API')
-        exit()
+    # If there's a free mobile user in the args, ask for the pass
+    if args.free_mobile_user:
+        args.free_mobile_pass = getpass.getpass("Fee mobile pass: ")
 
     return args
 
@@ -147,17 +147,26 @@ while(True):
           "```" + tabulate.tabulate(sorted_appointments, headers=table_header) + "```",
         "#vaccinbot"
       )
-
+  
   # Send an SMS if a combo of user/pass for the Free Mobile API are supplied
   if args.free_mobile_user:
-      print("Sending SMS…")
-      base = "https://smsapi.free-mobile.fr/sendmsg"
-      msg = tabulate.tabulate(sorted_appointments, headers=table_header)
-      url = f"{base}?user={args.free_mobile_user}&pass={args.free_mobile_pass}&msg={msg}"
-      r = requests.post(url)
+    def format_sms(sorted_appointments, table_header):
+      text = ''
+      for appointment in sorted_appointments:
+        text += '---------\n'
+        for key, value in zip(table_header, appointment):
+          text += f'{key}: {value}\n'
+        text += '\n'
+      return text
 
-      if r.status_code == 403:
-          print("Error while sending SMS: wrong credentials")
+    print("Sending SMS…")
+    base = "https://smsapi.free-mobile.fr/sendmsg"
+    msg = format_sms(sorted_appointments, table_header)
+    url = f"{base}?user={args.free_mobile_user}&pass={args.free_mobile_pass}&msg={msg}"
+    r = requests.post(url)
+
+    if r.status_code == 403:
+      print("Error while sending SMS: wrong credentials")
 
 
   print("Sleeping, back in", PING_INTERVAL_MINUTES, " minutes")
