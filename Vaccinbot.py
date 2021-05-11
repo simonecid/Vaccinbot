@@ -81,9 +81,9 @@ responses = {}
 
 print("Looking for:", SELECTED_VACCINES)
 print("Radius:", MAX_DISTANCE, "km")
-print("Searching appointments within 24h...")
+print("Searching chronodoses...")
 
-table_header = ["Vaccine", "Distance", "Day", "Time", "Location", "URL"]
+table_header = ["Vaccine", "Distance", "Day", "Time", "Location", "# doses", "URL"]
 
 while(True):
 
@@ -106,28 +106,31 @@ while(True):
       ## checking first available appointment in each centre
       available_centres = response_json["centres_disponibles"]
       for centre in available_centres:
+        for schedule in centre["appointment_schedules"]:
+          if schedule["name"] == "chronodose":
+            number_of_available_chronodoses = schedule["total"]
+        
+        if number_of_available_chronodoses == 0: continue 
+        
         next_available_appointment = centre["prochain_rdv"]
         appointment_time = dateutil.parser.parse(next_available_appointment)
 
-        ## checking if it is today or tomorrow
-        if appointment_time.date() - datetime.today().date() <= timedelta(days=1):
-
-          ## checking distance and vaccine type constraint and storing if OK
-          location = (centre["location"]["latitude"], centre["location"]["longitude"])
-          distance = round(geopy.distance.distance(location, MY_LOCATION).km)
-          vaccine_types = centre["vaccine_type"]
-          if (distance < MAX_DISTANCE) and (len(list(set(SELECTED_VACCINES) & set(vaccine_types))) > 0) :
-            vaccine_types_str = ",".join(vaccine_types)
-            entry = [
-              vaccine_types_str,
-              "{:d}".format(distance) + " km",
-              "{:d}".format(appointment_time.day) + "/" + "{:d}".format(appointment_time.month),
-              "{:02d}".format(appointment_time.hour) + ":" + "{:02d}".format(appointment_time.minute),
-              # centre["nom"],
-              centre["location"]["city"] + ", " + department_list[dep],
-              centre["url"]
-            ]
-            found_appointments.append(entry)
+        ## checking distance and vaccine type constraint and storing if OK
+        location = (centre["location"]["latitude"], centre["location"]["longitude"])
+        distance = round(geopy.distance.distance(location, MY_LOCATION).km)
+        vaccine_types = centre["vaccine_type"]
+        if (distance < MAX_DISTANCE) and (len(list(set(SELECTED_VACCINES) & set(vaccine_types))) > 0) :
+          vaccine_types_str = ",".join(vaccine_types)
+          entry = [
+            vaccine_types_str,
+            "{:d}".format(distance) + " km",
+            "{:d}".format(appointment_time.day) + "/" + "{:d}".format(appointment_time.month),
+            "{:02d}".format(appointment_time.hour) + ":" + "{:02d}".format(appointment_time.minute),
+            centre["location"]["city"] + ", " + department_list[dep],
+            str(number_of_available_chronodoses),
+            centre["url"]
+          ]
+          found_appointments.append(entry)
 
   # Sorting by distance
   # this function removes " km" from the distance entry in the table
