@@ -41,28 +41,50 @@ optional arguments:
                         Default: 01 (Ain) + neighbouring depts.
 ```
 
-Example:
+### Examples:
 
-* Text only:
-```./Vaccinbot.py --interval 20 --location 46 6 --max-distance 55 --vaccines P  ```
+Text only:
 
-* Slack bot:
-```python3.6 Vaccinbot.py --interval 20 --slack-token slack_token.txt --location 46 6 --max-distance 55 --vaccines AZ J ```
+```bash
+./Vaccinbot.py --interval 20 --location 46 6 --max-distance 55 --vaccines P  
+```
 
-* Free Mobile API:
-```python3.6 Vaccinbot.py --free-mobile-user 12345678 --free-mobile-password free_password.txt```
+Slack bot:
+
+```bash
+python3.6 Vaccinbot.py --interval 20 --slack-token slack_token.txt --location 46 6 --max-distance 55 --vaccines AZ J 
+```
+
+Free Mobile API, credits: [Mael-Le-Garrec](https://github.com/Mael-Le-Garrec)
+
+```bash
+python3.6 Vaccinbot.py --free-mobile-user 12345678 --free-mobile-password free_password.txt
+```
 
 ## Dependencies
+
 The dependencies can be installed from the command line via `pip`:
 ```
 pip install -r requirements.txt
 ```
+
+Credits: [RKHasmani](https://github.com/RKHashmani).
 
 ## Slack bot
 
 Create a Slack app, create the channel ```#vaccinbot```, copy and paste the app token in a file. Link the file via the ```---slack-token``` option.
 This will enable the Slack bot integration.
 
+## Free Mobile
+
+Access your personal area, enable SMS notifications under My Options, copy and paste your API token in a file. 
+
 ## Other integration?
 
 PRs for other chat types are welcome!
+
+
+## Other credits
+
+* [alexander-held](https://github.com/alexander-held): lighter Docker image
+* [defranchis](https://github.com/defranchis): improved day selection
