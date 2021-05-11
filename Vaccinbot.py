@@ -6,10 +6,12 @@ import dateutil.parser
 from datetime import datetime, timezone, timedelta
 import tabulate
 import geopy.distance
+import getpass
 from operator import itemgetter
 import slack
 import time
 import argparse
+from urllib.parse import quote
 
 # Constants and defaults
 
@@ -32,16 +34,26 @@ SELECTED_VACCINES = ["P", "M", "AZ", "J", "mRNA"]
 
 
 # Argument parsing
+def get_args():
+    parser = argparse.ArgumentParser(description="A bot that automatically fetches date from ViteMaDose and finds appointments within 24h.")
+    parser.add_argument("--interval", type=int, help="Time in minutes between queries to ViteMaDose. Default: " + str(PING_INTERVAL_MINUTES), default=PING_INTERVAL_MINUTES)
+    parser.add_argument("--slack-token", type=argparse.FileType(), help="Path to file containing a slack token (activates Slack bot feature).")
+    parser.add_argument("--free-mobile-user", type=str, help="User to be used with the Free Mobile SMS API")
+    parser.add_argument("--location", type=float, metavar=("LAT", "LONG"), nargs=2, help="Latitude and longitude of your location. Default: St. Genis.", default=ST_GENIS)
+    parser.add_argument("--max-distance", type=int, help="Maximum radius of search from your position in km. Default: " + str(MAX_DISTANCE) + " km" , default=MAX_DISTANCE)
+    parser.add_argument("--vaccines", type=str, nargs="*", help="List of vaccines to look for. P=Pfizer-BioNTech;  M=Moderna; AZ=AstraZeneca; J=Janssen. Default: all.", default=SELECTED_VACCINES)
+    parser.add_argument("--depts", type=str, nargs="*", help="List of department numbers where to look for vaccines (add 0 before single-digit depts. e.g. 01 not 1). Default: 01 (Ain) + neighbouring depts.", default=DEPARTMENTS)
 
-parser = argparse.ArgumentParser(description="A bot that automatically fetches date from ViteMaDose and finds appointments within 24h.")
-parser.add_argument("--interval", type=int, help="Time in minutes between queries to ViteMaDose. Default: " + str(PING_INTERVAL_MINUTES), default=PING_INTERVAL_MINUTES)
-parser.add_argument("--slack-token", type=argparse.FileType(), help="Path to file containing a slack token (activates Slack bot feature).")
-parser.add_argument("--location", type=float, metavar=("LAT", "LONG"), nargs=2, help="Latitude and longitude of your location. Default: St. Genis.", default=ST_GENIS)
-parser.add_argument("--max-distance", type=int, help="Maximum radius of search from your position in km. Default: " + str(MAX_DISTANCE) + " km" , default=MAX_DISTANCE)
-parser.add_argument("--vaccines", type=str, nargs="*", help="List of vaccines to look for. P=Pfizer-BioNTech;  M=Moderna; AZ=AstraZeneca; J=Janssen. Default: all.", default=SELECTED_VACCINES)
-parser.add_argument("--depts", type=str, nargs="*", help="List of department numbers where to look for vaccines (add 0 before single-digit depts. e.g. 01 not 1). Default: 01 (Ain) + neighbouring depts.", default=DEPARTMENTS)
+    args = parser.parse_args()
 
-args = parser.parse_args()
+    # If there's a free mobile user in the args, ask for the pass
+    if args.free_mobile_user:
+        args.free_mobile_pass = getpass.getpass("Fee mobile pass: ")
+
+    return args
+
+
+args = get_args()
 
 PING_INTERVAL_MINUTES = args.interval
 SLACK_TOKEN_FILE = args.slack_token
@@ -135,6 +147,27 @@ while(True):
           "```" + tabulate.tabulate(sorted_appointments, headers=table_header) + "```",
         "#vaccinbot"
       )
+  
+  # Send an SMS if a combo of user/pass for the Free Mobile API are supplied
+  if args.free_mobile_user:
+    def format_sms(sorted_appointments, table_header):
+      text = ''
+      for appointment in sorted_appointments:
+        text += '---------\n'
+        for key, value in zip(table_header, appointment):
+          text += f'{key}: {value}\n'
+        text += '\n'
+      return text
+
+    print("Sending SMS…")
+    base = "https://smsapi.free-mobile.fr/sendmsg"
+    msg = format_sms(sorted_appointments, table_header)
+    url = f"{base}?user={args.free_mobile_user}&pass={args.free_mobile_pass}&msg={msg}"
+    r = requests.post(url)
+
+    if r.status_code == 403:
+      print("Error while sending SMS: wrong credentials")
+
 
   print("Sleeping, back in", PING_INTERVAL_MINUTES, " minutes")
   time.sleep(60*PING_INTERVAL_MINUTES)
