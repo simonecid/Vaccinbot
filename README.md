@@ -68,7 +68,7 @@ The dependencies can be installed from the command line via `pip`:
 pip install -r requirements.txt
 ```
 
-Credits: [RKHasmani](https://github.com/RKHashmani).
+Credits: [RKHashmani](https://github.com/RKHashmani).
 
 ## Slack bot
 
